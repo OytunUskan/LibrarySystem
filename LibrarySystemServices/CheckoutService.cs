@@ -10,7 +10,7 @@ namespace LibrarySystemServices
 {
     public class CheckoutService : ICheckout
     {
-
+        private const string NotCheckedOut = "Not checked out.";
         private LibraryContext _context;
         public CheckoutService(LibraryContext context)
         {
@@ -62,7 +62,7 @@ namespace LibrarySystemServices
             var now = DateTime.Now;
             
 
-            UpdateAssetStatus(assetId, "Avaliable");
+            UpdateAssetStatus(assetId, AssetStatus.Available);
 
             //remove any existing checkout on the item
             RemoveExistingCheckouts(assetId);
@@ -111,11 +111,11 @@ namespace LibrarySystemServices
 
         public void MarkLost(int assetId)
         {
-            UpdateAssetStatus(assetId, "Lost");
+            UpdateAssetStatus(assetId, AssetStatus.Lost);
             _context.SaveChanges();
         }
 
-        public void CheckInItem(int assetId, int libraryCardId)
+        public void CheckInItem(int assetId)
         {
             var now = DateTime.Now;
             var asset = _context.LibraryAssets
@@ -134,9 +134,10 @@ namespace LibrarySystemServices
             if (currentHolds.Any())
             {
                 CheckoutToEarliestHold(assetId, currentHolds);
+                return;
             }
             //otherwise, update the item status to avaliable.
-            UpdateAssetStatus(assetId, "Avaliable");
+            UpdateAssetStatus(assetId, AssetStatus.Available);
 
             _context.SaveChanges();
 
@@ -166,7 +167,7 @@ namespace LibrarySystemServices
             var item = _context.LibraryAssets
                 .FirstOrDefault(asset => asset.Id == assetId);
 
-            UpdateAssetStatus(assetId, "Checked Out");
+            UpdateAssetStatus(assetId, AssetStatus.CheckedOut);
 
             var libraryCard = _context.LibraryCards
                 .Include(card => card.Checkouts)
@@ -200,7 +201,7 @@ namespace LibrarySystemServices
             return DateTime.Now.AddDays(30);
         }
 
-        private bool IsCheckedOut(int assetId)
+        public bool IsCheckedOut(int assetId)
         {
             return _context.Checkouts.Where(co => co.LibraryAsset.Id == assetId).Any();
         }
@@ -210,14 +211,15 @@ namespace LibrarySystemServices
             var now = DateTime.Now;
 
             var asset = _context.LibraryAssets
+                .Include(a => a.Status)
                .FirstOrDefault(a => a.Id == assetId);
 
             var card = _context.LibraryCards
                 .FirstOrDefault(c => c.Id == libraryCardId);
 
-            if(asset.Status.Name == "Available")
+            if(asset.Status.Name == AssetStatus.Available)
             {
-                UpdateAssetStatus(assetId, "On Hold");
+                UpdateAssetStatus(assetId, AssetStatus.OnHold);
             }
 
             var hold = new Hold
@@ -264,7 +266,7 @@ namespace LibrarySystemServices
             var checkout = GetCheckoutByAssetId(assetId);
             if (checkout == null)
             {
-                return "Not checked out.";
+                return NotCheckedOut;
             }
 
             var cardId = checkout.LibraryCard.Id;
@@ -283,5 +285,16 @@ namespace LibrarySystemServices
                  .Include(c => c.LibraryCard)
                  .FirstOrDefault(c => c.LibraryAsset.Id == assetId);
         }
+
+        
+    }
+
+    public static class AssetStatus
+    {
+        public const string CheckedOut = "Checked Out";
+        public const string Available = "Available";
+        public const string Lost = "Lost";
+        public const string OnHold = "On Hold";
+
     }
 }

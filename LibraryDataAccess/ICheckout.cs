@@ -15,13 +15,14 @@ namespace LibraryDataAccess
         Checkout GetById(int checkoutId);
         Checkout GetLatesCheckout(int assetId);
 
+        bool IsCheckedOut(int id);
         string GetCurrentCheckoutPatron(int assetId);
         string GetCurrentHoldPatronName(int id);
         DateTime GetCurrentHoldPlaced(int id);
 
         void PlaceHold(int assetId, int libraryCardId);
         void CheckOutItem(int assetId, int libraryCardId);
-        void CheckInItem(int assetId, int libraryCardId);
+        void CheckInItem(int assetId);
         void MarkLost(int assetId);
         void MarkFound(int assetId);
     }

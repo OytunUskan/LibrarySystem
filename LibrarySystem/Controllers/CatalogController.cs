@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using LibraryDataAccess;
 using LibrarySystem.Models.Catalog;
+using LibrarySystem.Models.CheckoutModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LibrarySystem.Controllers
@@ -65,7 +66,7 @@ namespace LibrarySystem.Controllers
                 ISBN = _asset.GetIsbn(id),
                 CheckoutHistory = _checkout.GetCheckOutHistory(id),
                 LatestCheckout = _checkout.GetLatesCheckout(id),
-                PatronName = _checkout.GetCurrentHoldPatronName(id),
+                PatronName = _checkout.GetCurrentCheckoutPatron(id),
                 CurrentHolds = currentHolds,
                 Type = _asset.GetType(id)
             };
@@ -76,6 +77,70 @@ namespace LibrarySystem.Controllers
         public IActionResult Checkout(int id)
         {
 
+            var asset = _asset.GetById(id);
+
+            var model = new CheckoutModel {
+                AssetId = id,
+                ImageUrl = asset.ImageUrl,
+                LibraryCardId = "",
+                Title = asset.Title,
+                IsCheckedOut = _checkout.IsCheckedOut(id)
+            };
+
+
+            return View(model);
+        }
+
+        public IActionResult CheckIn(int id)
+        {
+            _checkout.CheckInItem(id);
+            return RedirectToAction("Detail", new { id = id });
+        }
+
+
+        public IActionResult Hold(int id)
+        {
+            var asset = _asset.GetById(id);
+
+            var model = new CheckoutModel
+            {
+                AssetId = id,
+                ImageUrl = asset.ImageUrl,
+                LibraryCardId = "",
+                Title = asset.Title,
+                IsCheckedOut = _checkout.IsCheckedOut(id),
+                HoldCount = _checkout.GetCurrentHolds(id).Count()
+            };
+
+
+            return View(model);
+        }
+
+        public IActionResult MarkLost(int assetId)
+        {
+            _checkout.MarkLost(assetId);
+            return RedirectToAction("Detail", new { id = assetId });
+        }
+
+        public IActionResult MarkFound(int assetId)
+        {
+            _checkout.MarkFound(assetId);
+            return RedirectToAction("Detail", new { id = assetId });
+        }
+
+
+        [HttpPost]
+        public IActionResult PlacedCheckout(int assetId, int libraryCardId)
+        {
+            _checkout.CheckOutItem(assetId, libraryCardId);
+            return RedirectToAction("Detail", new { id = assetId });
+        }
+
+        [HttpPost]
+        public IActionResult PlaceHold(int assetId, int libraryCardId)
+        {
+            _checkout.PlaceHold(assetId, libraryCardId);
+            return RedirectToAction("Detail", new { id = assetId });
         }
     }
 }
