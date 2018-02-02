@@ -1,4 +1,4 @@
 # Library Management System
 Library Management System
 
-This project was done with MVC and asp.net core 2.0
+This project was done with MVC and ASP.NET Core 2.0
